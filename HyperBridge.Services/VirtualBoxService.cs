@@ -154,16 +154,18 @@ public sealed class VirtualBoxService(IProcessRunner processRunner, ILoggingServ
     public async Task<ProcessExecutionResult> CloneMediumToVhdAsync(string sourceDiskPath, string targetVhdPath, Action<string>? onOutput, CancellationToken cancellationToken)
     {
         var vboxManage = await FindVBoxManagePathAsync(cancellationToken).ConfigureAwait(false);
+        EnsureTargetDirectoryExists(targetVhdPath);
+        await CleanupTargetMediumAsync(vboxManage, targetVhdPath, cancellationToken).ConfigureAwait(false);
         loggingService.LogInfo($"Starte VBox clone von '{sourceDiskPath}' nach '{targetVhdPath}'.");
 
-        var result = await processRunner.RunAsync(new ProcessExecutionOptions
+        var result = await RunCloneMediumAsync(vboxManage, sourceDiskPath, targetVhdPath, onOutput, cancellationToken).ConfigureAwait(false);
+
+        if (result.ExitCode != 0 && IsTargetMediumAlreadyRegisteredError(result, targetVhdPath))
         {
-            FileName = vboxManage,
-            Arguments = $"clonemedium disk \"{sourceDiskPath}\" \"{targetVhdPath}\" --format VHD",
-            TimeoutMs = 3600000,
-            OnStdOut = onOutput,
-            OnStdErr = onOutput,
-        }, cancellationToken).ConfigureAwait(false);
+            loggingService.LogWarning("VirtualBox meldet ein bereits registriertes Ziel-Medium. Bereinige Registrierung und starte den Klon einmal neu.");
+            await CleanupTargetMediumAsync(vboxManage, targetVhdPath, cancellationToken).ConfigureAwait(false);
+            result = await RunCloneMediumAsync(vboxManage, sourceDiskPath, targetVhdPath, onOutput, cancellationToken).ConfigureAwait(false);
+        }
 
         if (result.ExitCode == 0)
         {
@@ -175,6 +177,64 @@ public sealed class VirtualBoxService(IProcessRunner processRunner, ILoggingServ
         }
 
         return result;
+    }
+
+    private async Task<ProcessExecutionResult> RunCloneMediumAsync(string vboxManage, string sourceDiskPath, string targetVhdPath, Action<string>? onOutput, CancellationToken cancellationToken)
+    {
+        return await processRunner.RunAsync(new ProcessExecutionOptions
+        {
+            FileName = vboxManage,
+            Arguments = $"clonemedium disk \"{sourceDiskPath}\" \"{targetVhdPath}\" --format VHD",
+            TimeoutMs = 3600000,
+            OnStdOut = onOutput,
+            OnStdErr = onOutput,
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task CleanupTargetMediumAsync(string vboxManage, string targetVhdPath, CancellationToken cancellationToken)
+    {
+        var closeResult = await processRunner.RunAsync(new ProcessExecutionOptions
+        {
+            FileName = vboxManage,
+            Arguments = $"closemedium disk \"{targetVhdPath}\" --delete",
+            TimeoutMs = 120000,
+        }, cancellationToken).ConfigureAwait(false);
+
+        if (closeResult.ExitCode != 0)
+        {
+            loggingService.LogDebug($"closemedium Vorbereinigung meldete: {closeResult.StandardError.Trim()}");
+        }
+
+        if (!File.Exists(targetVhdPath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(targetVhdPath);
+            loggingService.LogInfo($"Vorhandenes Ziel-Medium gelöscht: '{targetVhdPath}'.");
+        }
+        catch (Exception ex)
+        {
+            loggingService.LogWarning($"Konnte vorhandenes Ziel-Medium nicht löschen: '{targetVhdPath}'. Ursache: {ex.Message}");
+        }
+    }
+
+    private static bool IsTargetMediumAlreadyRegisteredError(ProcessExecutionResult result, string targetVhdPath)
+    {
+        var combined = string.Join('\n', [result.StandardOutput, result.StandardError]);
+        return combined.Contains("already exists", StringComparison.OrdinalIgnoreCase)
+            && combined.Contains(targetVhdPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void EnsureTargetDirectoryExists(string targetVhdPath)
+    {
+        var directory = Path.GetDirectoryName(targetVhdPath);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
     }
 
     private async Task<Dictionary<string, string>> GetMachineReadableInfoAsync(string vboxManagePath, string vmName, CancellationToken cancellationToken)

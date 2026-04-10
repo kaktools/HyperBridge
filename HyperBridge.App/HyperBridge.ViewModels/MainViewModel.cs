@@ -180,6 +180,14 @@ public sealed class MainViewModel : ViewModelBase
 
     public RelayCommand ToggleThemeCommand { get; }
 
+    public string FooterPrimaryButtonText => WizardStep == 6 ? "Migration starten" : "Weiter";
+
+    public bool IsFooterPrimaryButtonVisible => WizardStep < 7;
+
+    public System.Windows.Input.ICommand FooterPrimaryCommand => WizardStep == 6
+        ? StartMigrationCommand
+        : NextStepCommand;
+
     public AppPane CurrentPane
     {
         get => _currentPane;
@@ -195,6 +203,10 @@ public sealed class MainViewModel : ViewModelBase
             {
                 PreviousStepCommand.RaiseCanExecuteChanged();
                 NextStepCommand.RaiseCanExecuteChanged();
+                StartMigrationCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(FooterPrimaryButtonText));
+                OnPropertyChanged(nameof(IsFooterPrimaryButtonVisible));
+                OnPropertyChanged(nameof(FooterPrimaryCommand));
             }
         }
     }
@@ -637,6 +649,7 @@ public sealed class MainViewModel : ViewModelBase
     private async Task CheckForUpdatesAsync(bool showDialogs)
     {
         var currentVersion = GetCurrentAppVersion();
+        var currentVersionText = FormatVersionForDisplay(currentVersion);
 
         try
         {
@@ -675,14 +688,15 @@ public sealed class MainViewModel : ViewModelBase
 
             if (latestVersion > currentVersion)
             {
-                UpdateStatusText = $"Update verfügbar: v{latestVersion}";
-                _loggingService.LogInfo($"Update verfügbar: aktuell v{currentVersion}, GitHub v{latestVersion}");
+                var latestVersionText = FormatVersionForDisplay(latestVersion);
+                UpdateStatusText = $"Update verfügbar: v{latestVersionText}";
+                _loggingService.LogInfo($"Update verfügbar: aktuell v{currentVersionText}, GitHub v{latestVersionText}");
 
                 if (showDialogs)
                 {
                     var openRelease = await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         MessageBox.Show(
-                            $"Neue Version gefunden:{Environment.NewLine}Installiert: v{currentVersion}{Environment.NewLine}GitHub: v{latestVersion}{Environment.NewLine}{Environment.NewLine}Release-Seite jetzt öffnen?",
+                            $"Neue Version gefunden:{Environment.NewLine}Installiert: v{currentVersionText}{Environment.NewLine}GitHub: v{latestVersionText}{Environment.NewLine}{Environment.NewLine}Release-Seite jetzt öffnen?",
                             "Update verfügbar",
                             MessageBoxButton.YesNo,
                             MessageBoxImage.Information) == MessageBoxResult.Yes);
@@ -700,13 +714,13 @@ public sealed class MainViewModel : ViewModelBase
                 return;
             }
 
-            UpdateStatusText = $"Aktuell: v{currentVersion}";
+            UpdateStatusText = $"Aktuell: v{currentVersionText}";
 
             if (showDialogs)
             {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     MessageBox.Show(
-                        $"Du nutzt bereits die aktuelle Version (v{currentVersion}).",
+                        $"Du nutzt bereits die aktuelle Version (v{currentVersionText}).",
                         "Update-Check",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information));
@@ -1229,6 +1243,12 @@ public sealed class MainViewModel : ViewModelBase
             ?? new Version(0, 0, 0);
 
         return version;
+    }
+
+    private static string FormatVersionForDisplay(Version version)
+    {
+        var patch = version.Build >= 0 ? version.Build : 0;
+        return $"{version.Major}.{version.Minor}.{patch}";
     }
 
     private static bool TryParseVersion(string rawValue, out Version version)
