@@ -48,46 +48,50 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="{DynamicResource BrushSurface}" Margin="14,8,14,0" CornerRadius="16" Padding="18,10" MouseLeftButtonDown="HeaderDrag_MouseLeftButtonDown">
+        <Border Grid.Row="1" Background="{DynamicResource BrushSurface}" Margin="14,8,14,0" CornerRadius="16" Padding="12,10" MouseLeftButtonDown="HeaderDrag_MouseLeftButtonDown">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="390" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="360" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                    <Button Grid.Column="0"
                        Click="HeaderLogoButton_Click"
                        HorizontalAlignment="Left"
                        VerticalAlignment="Center"
-                       Margin="0"
+                       Margin="12,0,0,0"
                        Background="Transparent"
                        BorderThickness="0"
                        Padding="0"
                        Cursor="Hand"
                        ToolTip="GitHub Repository öffnen">
                       <Image Source="Resources/Branding/HyperBridge.png"
-                          Width="370"
-                          Height="146"
+                          Height="138"
                           Stretch="Uniform" />
                   </Button>
-                <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left">
+                <StackPanel Grid.Column="1" Margin="72,0,24,0" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="VirtualBox zu Hyper-V Migration"
                                Style="{StaticResource PageTitleText}"
                                FontSize="30"
                                FontWeight="Bold"
-                               TextAlignment="Left"
+                               TextAlignment="Center"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="Einfach Schritt für Schritt durch den gesamten Migrationsprozess."
                                Style="{StaticResource PageSubtitleText}"
                                FontSize="14"
-                               TextAlignment="Left" />
+                               TextAlignment="Center" />
                 </StackPanel>
-                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <Button Content="☕ Buy Me a Coffee" Style="{StaticResource SupportActionButton}" Click="BuyMeACoffeeButton_Click" />
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Right">
-                        <Button Content="Status aktualisieren" Style="{StaticResource SecondaryActionButton}" Command="{Binding RefreshStatusCommand}" />
-                        <Button Content="Auf Updates prüfen" Style="{StaticResource SecondaryActionButton}" Command="{Binding CheckForUpdatesCommand}" Margin="12,0,0,0" />
-                        <Button Content="Neue Migration" Command="{Binding StartNewMigrationCommand}" Margin="12,0,0,0" IsEnabled="{Binding CanStartMigrationProcess}">
+                <Grid Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="16,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="200" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Row="0" Grid.Column="0" Margin="0,0,12,0" MinWidth="0" HorizontalAlignment="Stretch" Content="Neue Migration" Command="{Binding StartNewMigrationCommand}" IsEnabled="{Binding CanStartMigrationProcess}">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource PrimaryActionButton}">
                                     <Style.Triggers>
@@ -98,8 +102,11 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                    </StackPanel>
-                </StackPanel>
+                    <Button Grid.Row="0" Grid.Column="1" MinWidth="0" HorizontalAlignment="Stretch" Content="☕ Buy Me a Coffee" Style="{StaticResource SupportActionButton}" Click="BuyMeACoffeeButton_Click" />
+
+                    <Button Grid.Row="1" Grid.Column="0" Margin="0,10,12,0" MinWidth="0" HorizontalAlignment="Stretch" Content="Status aktualisieren" Style="{StaticResource SecondaryActionButton}" Command="{Binding RefreshStatusCommand}" />
+                    <Button Grid.Row="1" Grid.Column="1" Margin="0,10,0,0" MinWidth="0" HorizontalAlignment="Stretch" Content="Auf Updates prüfen" Style="{StaticResource SecondaryActionButton}" Command="{Binding CheckForUpdatesCommand}" />
+                </Grid>
             </Grid>
         </Border>
 
