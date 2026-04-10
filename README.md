@@ -2,7 +2,13 @@
 
 Geführte Migration von VirtualBox nach Hyper-V auf Windows 10 und 11.
 
-Version: 1.1.0
+Version: 1.1.1
+
+## Neu in 1.1.1
+
+- Wizard-Footer verbessert: Im letzten Schritt heißt der Hauptbutton jetzt korrekt "Migration starten" und wird nach dem Abschluss ausgeblendet.
+- Update-Check zeigt Versionen jetzt konsistent im Format `Major.Minor.Patch` an (z. B. `1.1.1` statt uneinheitlicher Darstellungen).
+- VirtualBox-Klon robuster gemacht: Zielverzeichnis wird vorab erstellt, bereits registrierte Ziel-Medien werden bereinigt und der Klon wird bei typischem Registrierungsfehler einmal automatisch neu versucht.
 
 ## Überblick
 

@@ -1,5 +1,26 @@
 # Release Notes
 
+## 1.1.1 - 2026-04-10
+
+Wartungs- und Stabilitätsrelease mit Fokus auf Bedienlogik im Wizard, konsistente Versionsanzeige und robustere VirtualBox-Klonläufe.
+
+### Verbessert
+
+- Wizard-Navigation im Footer überarbeitet:
+	- Der Primärbutton zeigt im letzten Schritt jetzt korrekt `Migration starten` statt `Weiter`.
+	- Nach Abschluss (Ergebnis-Schritt) wird der Primärbutton ausgeblendet.
+	- Die Primäraktion wird kontextabhängig korrekt zwischen `Weiter` und `Migration starten` umgeschaltet.
+- Update-Check vereinheitlicht:
+	- Versionsanzeige im UI, in Logs und Dialogen wird nun konsistent als `Major.Minor.Patch` formatiert.
+
+### Behoben
+
+- VirtualBox-Klonfehler bei bereits registriertem Zielmedium (`already exists`) abgefangen:
+	- Zielordner wird vor dem Klonlauf sichergestellt.
+	- Vorhandene Ziel-Registrierung wird per `closemedium ... --delete` bereinigt.
+	- Bei erkanntem Registrierungsfehler erfolgt ein automatischer einmaliger Wiederholungsversuch.
+	- Vorhandene Zieldatei wird vor dem erneuten Lauf nach Möglichkeit entfernt.
+
 ## 1.1.0 - 2026-04-10
 
 Erstes offizielles Release von HyperBridge.
