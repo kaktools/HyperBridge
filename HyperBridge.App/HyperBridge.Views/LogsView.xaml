@@ -1,0 +1,28 @@
+﻿<UserControl x:Class="HyperBridge.App.Views.LogsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Logs und Berichte" Style="{StaticResource PageTitleText}" />
+
+        <Border Grid.Row="1" Style="{StaticResource PanelCard}" Margin="0,12,0,12">
+            <ListBox ItemsSource="{Binding LiveLogEntries}" FontFamily="Consolas" FontSize="12" BorderThickness="0" Background="Transparent" />
+        </Border>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Logs kopieren" Style="{StaticResource SecondaryActionButton}" Command="{Binding CopyLogsCommand}" />
+            <Button Content="Log öffnen" Style="{StaticResource SecondaryActionButton}" Command="{Binding OpenLogCommand}" Margin="12,0,0,0" />
+            <Button Content="Bericht exportieren" Style="{StaticResource PrimaryActionButton}" Command="{Binding ExportReportCommand}" Margin="12,0,0,0" />
+        </StackPanel>
+    </Grid>
+</UserControl>
+
+

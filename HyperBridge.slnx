@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="HyperBridge.App/HyperBridge.App.csproj" />
+  <Project Path="HyperBridge.Core/HyperBridge.Core.csproj" />
+  <Project Path="HyperBridge.Infrastructure/HyperBridge.Infrastructure.csproj" />
+  <Project Path="HyperBridge.Services/HyperBridge.Services.csproj" />
+</Solution>

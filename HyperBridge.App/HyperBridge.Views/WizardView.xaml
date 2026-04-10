@@ -1,0 +1,267 @@
+﻿<UserControl x:Class="HyperBridge.App.Views.WizardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:HyperBridge.App.Infrastructure"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <infra:StepVisibilityConverter x:Key="StepVisibilityConverter" />
+        <infra:CompatibilityBrushConverter x:Key="CompatibilityBrushConverter" />
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Migrations-Wizard" Style="{StaticResource PageTitleText}" />
+            <TextBlock Text="Schrittweise, abgesicherte Migration von VirtualBox nach Hyper-V" Style="{StaticResource PageSubtitleText}" />
+            <ProgressBar Height="12" Margin="0,12,0,0" Value="{Binding ProgressPercent, Mode=OneWay}" Maximum="100" />
+            <DockPanel Margin="0,8,0,0">
+                <Border Background="#27466C" CornerRadius="8" Padding="10,4" DockPanel.Dock="Left">
+                    <TextBlock Text="{Binding WizardStep, StringFormat=Schritt {0} von 7}" Foreground="White" FontSize="12" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Text="{Binding CurrentStepText}" Style="{StaticResource FieldValueText}" Margin="10,3,0,0" />
+            </DockPanel>
+            <TextBlock Margin="0,6,0,0" Style="{StaticResource FieldValueText}">
+                <Run Text="Ausgewählte VM: " />
+                <Run Text="{Binding SelectedVm.Name, TargetNullValue=Keine VM ausgewählt}" FontWeight="SemiBold" Foreground="{DynamicResource BrushAccent}" />
+            </TextBlock>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Border Visibility="{Binding WizardStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=1}" Style="{StaticResource PanelCard}">
+                    <StackPanel>
+                        <TextBlock Text="Schritt 1: VirtualBox-VM auswählen" Style="{StaticResource CardTitleText}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="VMs laden" Command="{Binding LoadVmsCommand}" Style="{StaticResource SecondaryActionButton}" />
+                        </StackPanel>
+
+                        <DataGrid ItemsSource="{Binding FilteredVms}" SelectedItem="{Binding SelectedVm}" AutoGenerateColumns="False" MinHeight="72" MaxHeight="260" Margin="0,12,0,0"
+                                  IsReadOnly="True" HeadersVisibility="Column" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="FullRow">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="VM-Name" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Zustand" Binding="{Binding State}" Width="120" />
+                                <DataGridTextColumn Header="Gast-OS" Binding="{Binding GuestOsType}" Width="180" />
+                                <DataGridTextColumn Header="RAM" Binding="{Binding MemoryMb}" Width="80" />
+                                <DataGridTextColumn Header="CPU" Binding="{Binding CpuCount}" Width="70" />
+                                <DataGridCheckBoxColumn Header="Snapshots" Binding="{Binding HasSnapshots}" Width="100" />
+                                <DataGridTextColumn Header="Hauptdisk" Binding="{Binding PrimaryDiskPath}" Width="240" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Text="Wählen Sie eine VM aus der Liste aus und klicken Sie dann auf Weiter." Style="{StaticResource FieldValueText}" Margin="0,12,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Visibility="{Binding WizardStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=2}" Style="{StaticResource PanelCard}">
+                    <StackPanel>
+                        <TextBlock Text="Schritt 2: VM analysieren" Style="{StaticResource CardTitleText}" />
+                        <TextBlock Text="Die Analyse startet automatisch beim Wechsel in diesen Schritt." Style="{StaticResource FieldValueText}" Margin="0,6,0,0" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,12">
+                            <Button Content="Analyse erneut ausführen" Command="{Binding AnalyzeVmCommand}" Style="{StaticResource SecondaryActionButton}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Analysis.Summary.Name, StringFormat=VM: {0}}" Style="{StaticResource FieldValueText}" />
+                        <TextBlock Text="{Binding Analysis.DiskPath, StringFormat=Disk: {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding Analysis.DiskType, StringFormat=Format: {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding Analysis.SourceDiskBytes, StringFormat=Quellgröße (Bytes): {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding Analysis.EstimatedRequiredBytes, StringFormat=Geschätzt benötigt (Bytes): {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding Analysis.AvailableTargetBytes, StringFormat=Verfügbar Ziel (Bytes): {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Visibility="{Binding WizardStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=3}" Style="{StaticResource PanelCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource SectionCard}" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Schritt 3: Gast-Vorbereitung" Style="{StaticResource CardTitleText}" Margin="0,0,0,8" />
+                                <CheckBox Content="Hostname geändert" IsChecked="{Binding HostnameChanged}" Margin="0,3,0,0" />
+                                <CheckBox Content="Lokale Benutzer geprüft" IsChecked="{Binding LocalUsersReviewed}" Margin="0,3,0,0" />
+                                <CheckBox Content="Benutzerpasswörter geändert" IsChecked="{Binding UserPasswordsChanged}" Margin="0,3,0,0" />
+                                <CheckBox Content="Admin-Passwort geändert" IsChecked="{Binding AdminPasswordChanged}" Margin="0,3,0,0" />
+                                <CheckBox Content="Netzparameter dokumentiert" IsChecked="{Binding NetworkParamsDocumented}" Margin="0,3,0,0" />
+                                <CheckBox Content="Guest Additions entfernt oder markiert" IsChecked="{Binding GuestAdditionsHandled}" Margin="0,3,0,0" />
+                                <CheckBox Content="Gast sauber heruntergefahren" IsChecked="{Binding GuestShutdownCleanly}" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Margin="14,0,0,0" Style="{StaticResource SectionCard}" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Notizen zur Vorbereitung" Style="{StaticResource CardTitleText}" Margin="0,0,0,8" />
+                                <TextBlock Text="Kurze Hinweise helfen bei späteren Checks und Reports." Style="{StaticResource FieldValueText}" Margin="0,0,0,8" />
+                                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="210" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Border Visibility="{Binding WizardStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=4}" Style="{StaticResource PanelCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource SectionCard}" Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Schritt 4: Zielkonfiguration" Style="{StaticResource CardTitleText}" Margin="0,0,0,8" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Hyper-V Name" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding HyperVVmName, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Zielpfad" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <Grid Grid.Row="2" Grid.Column="1" Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding TargetPath, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Grid.Column="1" Content="Ordner" Command="{Binding BrowseTargetFolderCommand}" Style="{StaticResource SecondaryActionButton}" Margin="8,0,0,0" MinWidth="120" />
+                                </Grid>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Generation" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <ComboBox Grid.Row="3" Grid.Column="1" SelectedValue="{Binding Generation}" SelectedValuePath="Tag" Width="170" Height="34" IsEditable="False" Margin="0,8,0,0" HorizontalAlignment="Left">
+                                    <ComboBoxItem Content="Gen 2" Tag="2" />
+                                    <ComboBoxItem Content="Gen 1" Tag="1" />
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="CPU" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding CpuCount}" Width="100" Margin="0,8,0,0" HorizontalAlignment="Left" />
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Virtueller Switch" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <Grid Grid.Row="5" Grid.Column="1" Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding Switches}" SelectedItem="{Binding SelectedSwitch}" Height="34" IsEditable="False" />
+                                    <Button Grid.Column="1" Content="Aktualisieren" Command="{Binding LoadSwitchesCommand}" Style="{StaticResource SecondaryActionButton}" Margin="8,0,0,0" MinWidth="130" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="1" Margin="14,0,0,0" Style="{StaticResource SectionCard}" Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="RAM (MB)" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding MemoryMb}" Width="120" HorizontalAlignment="Left" />
+
+                                <CheckBox Grid.Row="1" Grid.ColumnSpan="2" Content="Dynamischer Speicher" IsChecked="{Binding DynamicMemoryEnabled}" Margin="0,8,0,0" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Start-RAM" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding StartupMemoryMb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Min-RAM" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MinimumMemoryMb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Max-RAM" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaximumMemoryMb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
+
+                                <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                                    <CheckBox Content="Secure Boot aktiv" IsChecked="{Binding SecureBootEnabled}" />
+                                    <CheckBox Content="VM nach Erstellung starten" IsChecked="{Binding StartAfterCreation}" Margin="0,4,0,0" />
+                                    <CheckBox Content="Ersten Checkpoint erstellen" IsChecked="{Binding CreateCheckpoint}" Margin="0,4,0,0" />
+                                    <CheckBox Content="Dry Run (keine Änderungen)" IsChecked="{Binding DryRun}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Border Visibility="{Binding WizardStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=5}" Style="{StaticResource PanelCard}">
+                    <StackPanel>
+                        <TextBlock Text="Schritt 5: Kompatibilitätsprüfung" Style="{StaticResource CardTitleText}" />
+                        <Border CornerRadius="8" Padding="12" Margin="0,8,0,0" Background="{Binding CompatibilityLevel, Converter={StaticResource CompatibilityBrushConverter}}">
+                            <TextBlock Text="{Binding CompatibilitySummary}" FontWeight="SemiBold" Foreground="White" FontSize="16" />
+                        </Border>
+                        <TextBlock Text="Begründung" Style="{StaticResource FieldLabelText}" Margin="0,10,0,0" />
+                        <TextBlock Text="{Binding CompatibilityReasons}" TextWrapping="Wrap" Style="{StaticResource FieldValueText}" />
+                        <TextBlock Text="Handlungsempfehlung" Style="{StaticResource FieldLabelText}" Margin="0,10,0,0" />
+                        <TextBlock Text="{Binding CompatibilityActions}" TextWrapping="Wrap" Style="{StaticResource FieldValueText}" />
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                            <Button Content="Kompatibilität neu bewerten" Command="{Binding EvaluateCompatibilityCommand}" Style="{StaticResource SecondaryActionButton}" />
+                            <Button Content="Pre-Check ausführen" Command="{Binding RunPreCheckCommand}" Style="{StaticResource PrimaryActionButton}" Margin="12,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Visibility="{Binding WizardStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=6}" Style="{StaticResource PanelCard}">
+                    <StackPanel>
+                        <TextBlock Text="Schritt 6: Migration ausführen" Style="{StaticResource CardTitleText}" />
+                        <TextBlock Text="Die kritischen Buttons bleiben während der Ausführung gesperrt." Style="{StaticResource FieldValueText}" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Content="Migration starten" Command="{Binding StartMigrationCommand}" Style="{StaticResource PrimaryActionButton}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}" />
+                            <Button Content="Abbrechen" Command="{Binding CancelMigrationCommand}" Style="{StaticResource DangerActionButton}" Margin="12,0,0,0" />
+                        </StackPanel>
+
+                        <TextBlock Text="Experten-Details" Style="{StaticResource FieldLabelText}" Margin="0,12,0,0" />
+                        <TextBox Text="{Binding TechnicalDetails, Mode=OneWay}" FontFamily="Consolas" AcceptsReturn="True" TextWrapping="Wrap" Height="150" VerticalScrollBarVisibility="Auto" IsReadOnly="True" />
+                        <Button Content="Details kopieren" Command="{Binding CopyTechnicalDetailsCommand}" Style="{StaticResource SecondaryActionButton}" Width="170" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Visibility="{Binding WizardStep, Converter={StaticResource StepVisibilityConverter}, ConverterParameter=7}" Style="{StaticResource PanelCard}">
+                    <StackPanel>
+                        <TextBlock Text="Schritt 7: Ergebnis" Style="{StaticResource CardTitleText}" />
+                        <TextBlock Text="{Binding CurrentStepText}" Style="{StaticResource FieldValueText}" />
+                        <TextBlock Text="{Binding TechnicalDetails}" TextWrapping="Wrap" Style="{StaticResource FieldValueText}" Margin="0,8,0,0" />
+
+                        <WrapPanel Margin="0,14,0,0">
+                            <Button Content="Log öffnen" Command="{Binding OpenLogCommand}" Style="{StaticResource SecondaryActionButton}" />
+                            <Button Content="Zielordner öffnen" Command="{Binding OpenTargetFolderCommand}" Style="{StaticResource SecondaryActionButton}" Margin="8,0,0,0" />
+                            <Button Content="Hyper-V-Manager öffnen" Command="{Binding OpenHyperVManagerCommand}" Style="{StaticResource SecondaryActionButton}" Margin="8,0,0,0" />
+                            <Button Content="Bericht exportieren" Command="{Binding ExportReportCommand}" Style="{StaticResource SecondaryActionButton}" Margin="8,0,0,0" />
+                            <Button Content="Neue Migration" Command="{Binding StartNewMigrationCommand}" Style="{StaticResource PrimaryActionButton}" Margin="8,0,0,0" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Background="{DynamicResource BrushSurfaceAlt}" CornerRadius="12" Padding="10" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Zurück" Command="{Binding PreviousStepCommand}" Style="{StaticResource BackNavButton}" />
+                <Button Content="Weiter" Command="{Binding NextStepCommand}" Style="{StaticResource PrimaryActionButton}" Margin="12,0,0,0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
+
+

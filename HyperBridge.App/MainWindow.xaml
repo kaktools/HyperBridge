@@ -1,0 +1,202 @@
+﻿<Window x:Class="HyperBridge.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:views="clr-namespace:HyperBridge.App.Views"
+        mc:Ignorable="d"
+        Title="HyperBridge VM Migrator"
+        Icon="Resources/HyperBridge.ico"
+        Height="920"
+        Width="1380"
+        MinWidth="1120"
+        MinHeight="760"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Background="{DynamicResource BrushBackground}">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="8" CornerRadius="0" GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="42" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{DynamicResource BrushSurfaceAlt}" Margin="8,8,8,0" CornerRadius="10">
+            <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Image Source="Resources/HyperBridge.ico" Width="16" Height="16" Margin="0,0,8,0" />
+                    <TextBlock Text="HyperBridge" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource BrushTextPrimary}" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
+                    <Button Content="—" Width="44" Height="30" Margin="0" Padding="0" Style="{StaticResource TitleBarButtonStyle}" Click="MinimizeButton_Click" />
+                    <Button Content="▢" Width="44" Height="30" Margin="0" Padding="0" Style="{StaticResource TitleBarButtonStyle}" Click="MaximizeRestoreButton_Click" />
+                    <Button Content="✕" Width="44" Height="30" Margin="0" Padding="0" Style="{StaticResource TitleBarCloseButtonStyle}" Click="CloseButton_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource BrushSurface}" Margin="14,8,14,0" CornerRadius="16" Padding="18,10" MouseLeftButtonDown="HeaderDrag_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="390" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="360" />
+                </Grid.ColumnDefinitions>
+                   <Button Grid.Column="0"
+                       Click="HeaderLogoButton_Click"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Center"
+                       Margin="0"
+                       Background="Transparent"
+                       BorderThickness="0"
+                       Padding="0"
+                       Cursor="Hand"
+                       ToolTip="GitHub Repository öffnen">
+                      <Image Source="Resources/Branding/HyperBridge.png"
+                          Width="370"
+                          Height="146"
+                          Stretch="Uniform" />
+                  </Button>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <TextBlock Text="VirtualBox zu Hyper-V Migration"
+                               Style="{StaticResource PageTitleText}"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               TextAlignment="Left"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="Einfach Schritt für Schritt durch den gesamten Migrationsprozess."
+                               Style="{StaticResource PageSubtitleText}"
+                               FontSize="14"
+                               TextAlignment="Left" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <Button Content="☕ Buy Me a Coffee" Style="{StaticResource SupportActionButton}" Click="BuyMeACoffeeButton_Click" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Right">
+                        <Button Content="Status aktualisieren" Style="{StaticResource SecondaryActionButton}" Command="{Binding RefreshStatusCommand}" />
+                        <Button Content="Auf Updates prüfen" Style="{StaticResource SecondaryActionButton}" Command="{Binding CheckForUpdatesCommand}" Margin="12,0,0,0" />
+                        <Button Content="Neue Migration" Command="{Binding StartNewMigrationCommand}" Margin="12,0,0,0" IsEnabled="{Binding CanStartMigrationProcess}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryActionButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsAdmin}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="2" Margin="14,10,14,0">
+            <Border CornerRadius="12" Background="#5E2430" BorderBrush="#D95A7A" BorderThickness="1" Padding="12,10">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAdmin}" Value="False">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="Hinweis: HyperBridge muss als Administrator gestartet werden, damit Migration und Hyper-V-Aktionen funktionieren. Bitte Anwendung schließen und per Rechtsklick als Administrator ausführen."
+                           TextWrapping="Wrap"
+                           Foreground="White"
+                           FontWeight="SemiBold"
+                           FontSize="13" />
+            </Border>
+
+            <Border Margin="0,8,0,0" CornerRadius="12" Background="#5A3E22" BorderBrush="#D39A4F" BorderThickness="1" Padding="12,10">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsVirtualBoxDetected}" Value="False">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="Hinweis: VirtualBox wurde nicht erkannt. Der Migrationsprozess kann ohne installierte VirtualBox-Quelle nicht gestartet werden."
+                           TextWrapping="Wrap"
+                           Foreground="White"
+                           FontWeight="SemiBold"
+                           FontSize="13" />
+            </Border>
+
+            <Border Margin="0,8,0,0" CornerRadius="12" Background="#5A3E22" BorderBrush="#D39A4F" BorderThickness="1" Padding="12,10">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsHyperVDetected}" Value="False">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="Hinweis: Das Hyper-V-Feature wurde nicht erkannt. Der Migrationsprozess kann ohne Hyper-V nicht gestartet werden."
+                           TextWrapping="Wrap"
+                           Foreground="White"
+                           FontWeight="SemiBold"
+                           FontSize="13" />
+            </Border>
+        </StackPanel>
+
+        <Border Grid.Row="3" Background="{DynamicResource BrushSurface}" Margin="14" CornerRadius="16">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding CanStartMigrationProcess}" Value="False">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <views:WizardView />
+        </Border>
+
+        <StatusBar Grid.Row="4" Background="{DynamicResource BrushSurfaceAlt}" Foreground="{DynamicResource BrushTextPrimary}" FontSize="13" Padding="10,8" MinHeight="38" VerticalContentAlignment="Center">
+            <StatusBarItem DockPanel.Dock="Right" Padding="0,2">
+                <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=AppVersionText}" Foreground="{DynamicResource BrushTextSecondary}" VerticalAlignment="Center" />
+            </StatusBarItem>
+            <StatusBarItem Padding="0,2">
+                <TextBlock Text="{Binding IsAdmin, StringFormat=Admin: {0}}" Foreground="{DynamicResource BrushTextPrimary}" />
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem Padding="0,2">
+                <TextBlock Text="{Binding IsVirtualBoxDetected, StringFormat=VirtualBox: {0}}" Foreground="{DynamicResource BrushTextPrimary}" />
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem Padding="0,2">
+                <TextBlock Text="{Binding IsHyperVDetected, StringFormat=Hyper-V: {0}}" Foreground="{DynamicResource BrushTextPrimary}" />
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem Padding="0,2">
+                <TextBlock Text="{Binding CurrentStepText}" Foreground="{DynamicResource BrushTextPrimary}" />
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem Padding="0,2">
+                <TextBlock Text="{Binding UpdateStatusText}" Foreground="{DynamicResource BrushTextSecondary}" />
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
+

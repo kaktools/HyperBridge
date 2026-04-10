@@ -1,0 +1,28 @@
+﻿<UserControl x:Class="HyperBridge.App.Views.InfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24">
+            <TextBlock Text="Über HyperBridge" Style="{StaticResource PageTitleText}" />
+            <TextBlock Text="HyperBridge VM Migrator führt Administratoren sicher durch die Migration von VirtualBox nach Hyper-V." Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap" />
+
+            <Border Style="{StaticResource PanelCard}" Margin="0,20,0,0">
+                <StackPanel>
+                    <TextBlock Text="Version" Style="{StaticResource FieldLabelText}" />
+                    <TextBlock Text="1.0.0" Style="{StaticResource FieldValueText}" />
+
+                    <TextBlock Text="Workflow" Style="{StaticResource FieldLabelText}" Margin="0,12,0,0" />
+                    <TextBlock Text="VirtualBox erkennen -> VM analysieren -> Pre-Checks -> Klonen -> Konvertieren -> Hyper-V VM erstellen" TextWrapping="Wrap" Style="{StaticResource FieldValueText}" />
+
+                    <TextBlock Text="Hinweis" Style="{StaticResource FieldLabelText}" Margin="0,12,0,0" />
+                    <TextBlock Text="Das Tool ändert keine Passwörter im Gast automatisch und löscht niemals Quelldateien." TextWrapping="Wrap" Style="{StaticResource FieldValueText}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
+
+

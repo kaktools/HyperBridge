@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\HyperBridge.Core\HyperBridge.Core.csproj" />
+    <ProjectReference Include="..\HyperBridge.Services\HyperBridge.Services.csproj" />
+    <ProjectReference Include="..\HyperBridge.Infrastructure\HyperBridge.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\HyperBridge.ico</ApplicationIcon>
+    <AssemblyName>HyperBridge</AssemblyName>
+    <AssemblyTitle>HyperBridge VM Migrator</AssemblyTitle>
+    <Product>HyperBridge VM Migrator</Product>
+    <Description>Migration von VirtualBox-VMs nach Hyper-V</Description>
+    <Company>HyperBridge</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\HyperBridge.ico" />
+    <Content Include="Resources\Branding\HyperBridge.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Resources\Branding\*.svg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="appsettings.example.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,24 @@
+﻿<UserControl x:Class="HyperBridge.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24">
+            <TextBlock Text="Einstellungen" Style="{StaticResource PageTitleText}" />
+            <TextBlock Text="Theme, Zielpfad und Standardoptionen." Style="{StaticResource PageSubtitleText}" />
+
+            <Border Style="{StaticResource PanelCard}" Margin="0,16,0,0">
+                <StackPanel>
+                    <TextBlock Text="Report-Ausgabeordner" Style="{StaticResource FieldLabelText}" />
+                    <TextBox Text="{Binding ReportOutputFolder, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,12" />
+
+                    <TextBlock Text="Letzte Zielpfade werden automatisch gespeichert." Style="{StaticResource FieldValueText}" />
+                    <Button Content="Theme umschalten (Dark/Light)" Command="{Binding ToggleThemeCommand}" Style="{StaticResource SecondaryActionButton}" Width="260" Margin="0,16,0,0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
+

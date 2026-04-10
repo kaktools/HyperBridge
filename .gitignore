@@ -1,41 +1,33 @@
-# Prerequisites
-*.d
+# Build outputs
+[Bb]in/
+[Oo]bj/
+dist/
+installer/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# User/build helper
+build.bat
 
-# Precompiled Headers
-*.gch
-*.pch
+# Visual Studio / VS Code
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
-# Linker files
-*.ilk
+# Logs and reports
+*.log
+*.tmp
+*.cache
 
-# Debugger Files
-*.pdb
+# NuGet
+*.nupkg
+packages/
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
+# OS files
+Thumbs.db
+Desktop.ini
