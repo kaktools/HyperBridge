@@ -3,6 +3,7 @@ namespace HyperBridge.Core.Models;
 public sealed class VirtualMachineAnalysis
 {
     public required VirtualMachineSummary Summary { get; init; }
+    public IReadOnlyList<string> DiskPaths { get; init; } = Array.Empty<string>();
     public string DiskPath { get; init; } = string.Empty;
     public string DiskType { get; init; } = "Unknown";
     public bool IsRunning { get; init; }

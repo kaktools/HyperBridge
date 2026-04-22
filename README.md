@@ -2,7 +2,15 @@
 
 Geführte Migration von VirtualBox nach Hyper-V auf Windows 10 und 11.
 
-Version: 1.1.1
+Version: 1.1.2
+
+## Neu in 1.1.2
+
+- Mehrfach-Datenträger-Migration umgesetzt: HyperBridge erkennt jetzt alle an einer VirtualBox-VM angebundenen Festplatten und migriert nicht mehr nur die erste.
+- Vollständiger Multi-Disk-Flow: Jede erkannte Quell-Disk wird nach VHD geklont, nach VHDX konvertiert und in Hyper-V eingebunden.
+- Hyper-V-Provisionierung erweitert: Die VM wird mit der primären VHDX erstellt, zusätzliche VHDX-Dateien werden anschließend automatisch als weitere Festplatten angehängt.
+- Analyse und UI verbessert: Im Wizard ist die Anzahl erkannter Datenträger sichtbar, inklusive konsolidierter Größenbewertung über alle Disks.
+- Ergebnis, Report und Aufräumen aktualisiert: Abschlussdetails und Reports berücksichtigen jetzt mehrere Ziel-VHDX-Dateien; temporäre VHD-Dateien können gesammelt gelöscht werden.
 
 ## Neu in 1.1.1
 

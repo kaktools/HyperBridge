@@ -890,12 +890,14 @@ public sealed class MainViewModel : ViewModelBase
             var cleanupNote = await PromptDeleteVhdAfterSuccessfulMigrationAsync(result).ConfigureAwait(false);
 
             var configJson = JsonSerializer.Serialize(BuildTargetConfiguration(), new JsonSerializerOptions { WriteIndented = true });
+            var sourceDisks = Analysis.DiskPaths.Count > 0 ? Analysis.DiskPaths : [Analysis.DiskPath];
+            var targetVhdxDisks = result.VhdxPaths.Count > 0 ? result.VhdxPaths : [result.VhdxPath];
             var reportData = new ReportData
             {
                 SourceVm = SelectedVm?.Name ?? string.Empty,
-                SourceDisk = Analysis.DiskPath,
+                SourceDisk = string.Join(Environment.NewLine, sourceDisks.Where(path => !string.IsNullOrWhiteSpace(path))),
                 TargetVm = result.HyperVVmName,
-                TargetVhdx = result.VhdxPath,
+                TargetVhdx = string.Join(Environment.NewLine, targetVhdxDisks.Where(path => !string.IsNullOrWhiteSpace(path))),
                 StartedAtUtc = result.StartedAtUtc,
                 FinishedAtUtc = result.FinishedAtUtc,
                 ResultSummary = result.Summary,
@@ -914,8 +916,8 @@ public sealed class MainViewModel : ViewModelBase
             var finalLines = new List<string>
             {
                 $"Status: {result.Status}",
-                $"VHD: {result.VhdPath}",
-                $"VHDX: {result.VhdxPath}",
+                $"VHD-Dateien: {string.Join(", ", result.VhdPaths.Count > 0 ? result.VhdPaths : [result.VhdPath])}",
+                $"VHDX-Dateien: {string.Join(", ", result.VhdxPaths.Count > 0 ? result.VhdxPaths : [result.VhdxPath])}",
                 $"Hyper-V VM: {result.HyperVVmName}",
                 $"Report: {_lastReportPath}",
             };
@@ -943,46 +945,70 @@ public sealed class MainViewModel : ViewModelBase
             return string.Empty;
         }
 
-        if (string.IsNullOrWhiteSpace(result.VhdPath) || string.IsNullOrWhiteSpace(result.VhdxPath))
+        var vhdPaths = (result.VhdPaths.Count > 0 ? result.VhdPaths : [result.VhdPath])
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var vhdxPaths = (result.VhdxPaths.Count > 0 ? result.VhdxPaths : [result.VhdxPath])
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (vhdPaths.Count == 0 || vhdxPaths.Count == 0)
         {
             return string.Empty;
         }
 
-        if (!File.Exists(result.VhdPath) || !File.Exists(result.VhdxPath))
+        var existingVhdPaths = vhdPaths.Where(File.Exists).ToList();
+        if (existingVhdPaths.Count == 0 || !vhdxPaths.Any(File.Exists))
         {
             return string.Empty;
         }
 
+        var listText = string.Join(Environment.NewLine, existingVhdPaths.Select(path => $"- VHD: {path}"));
         var askDelete = await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             MessageBox.Show(
-                $"Die Migration war erfolgreich und es wurden zwei Dateien gefunden:{Environment.NewLine}{Environment.NewLine}- VHD: {result.VhdPath}{Environment.NewLine}- VHDX: {result.VhdxPath}{Environment.NewLine}{Environment.NewLine}Die VHD wird nach der Konvertierung normalerweise nicht mehr benötigt. Möchtest du die VHD jetzt löschen?",
-                "VHD nach Migration löschen",
+                $"Die Migration war erfolgreich und es wurden {existingVhdPaths.Count} temporäre VHD-Datei(en) gefunden:{Environment.NewLine}{Environment.NewLine}{listText}{Environment.NewLine}{Environment.NewLine}Diese VHD-Dateien werden nach der Konvertierung normalerweise nicht mehr benötigt. Möchtest du sie jetzt löschen?",
+                "VHDs nach Migration löschen",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question) == MessageBoxResult.Yes);
 
         if (!askDelete)
         {
-            _loggingService.LogInfo($"VHD beibehalten: {result.VhdPath}");
-            return "VHD beibehalten: Benutzer hat Löschen abgelehnt.";
+            _loggingService.LogInfo($"VHD-Dateien beibehalten: {string.Join(", ", existingVhdPaths)}");
+            return "VHD-Dateien beibehalten: Benutzer hat Löschen abgelehnt.";
         }
 
-        try
+        var deletedCount = 0;
+        var failedDeletes = new List<string>();
+        foreach (var vhdPath in existingVhdPaths)
         {
-            File.Delete(result.VhdPath);
-            _loggingService.LogInfo($"VHD gelöscht: {result.VhdPath}");
-            return "VHD gelöscht: Benutzerbestätigung erhalten.";
+            try
+            {
+                File.Delete(vhdPath);
+                deletedCount++;
+                _loggingService.LogInfo($"VHD gelöscht: {vhdPath}");
+            }
+            catch (Exception ex)
+            {
+                failedDeletes.Add($"{vhdPath} ({ex.Message})");
+                _loggingService.LogWarning($"VHD konnte nicht gelöscht werden: {vhdPath}. Fehler: {ex.Message}");
+            }
         }
-        catch (Exception ex)
+
+        if (failedDeletes.Count > 0)
         {
-            _loggingService.LogWarning($"VHD konnte nicht gelöscht werden: {result.VhdPath}. Fehler: {ex.Message}");
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 MessageBox.Show(
-                    $"Die VHD konnte nicht gelöscht werden:{Environment.NewLine}{ex.Message}",
-                    "VHD löschen",
+                    $"Nicht alle VHD-Dateien konnten gelöscht werden:{Environment.NewLine}{string.Join(Environment.NewLine, failedDeletes)}",
+                    "VHDs löschen",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning));
-            return "VHD-Löschung fehlgeschlagen. Siehe Log für Details.";
+            return $"VHD-Löschung teilweise fehlgeschlagen ({deletedCount}/{existingVhdPaths.Count} gelöscht).";
         }
+
+        return $"VHDs gelöscht: {deletedCount} Datei(en) entfernt.";
     }
 
     private void CancelMigration()

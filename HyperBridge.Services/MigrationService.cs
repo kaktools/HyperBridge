@@ -13,6 +13,7 @@ public sealed class MigrationService(
     public async Task<PreCheckResult> RunPreChecksAsync(MigrationRequest request, CancellationToken cancellationToken)
     {
         var result = new PreCheckResult();
+        var sourceDiskPaths = GetSourceDiskPaths(request.Analysis);
 
         if (request.Analysis.IsRunning)
         {
@@ -67,13 +68,25 @@ public sealed class MigrationService(
             .ConfigureAwait(false);
         result.Issues.AddRange(folderCheck.Issues);
 
-        if (!File.Exists(request.Analysis.DiskPath))
+        if (sourceDiskPaths.Count == 0)
+        {
+            result.Issues.Add(new CheckIssue
+            {
+                Severity = CheckSeverity.Error,
+                Title = "Kein Quelldatenträger erkannt",
+                TechnicalDetail = "In der Analyse wurden keine migrierbaren Datenträger gefunden.",
+                PossibleCause = "Die VM ist falsch konfiguriert oder nutzt ein nicht unterstütztes Format.",
+                NextStep = "Prüfe die Datenträger in VirtualBox und starte die Analyse erneut.",
+            });
+        }
+
+        foreach (var sourceDiskPath in sourceDiskPaths.Where(path => !File.Exists(path)))
         {
             result.Issues.Add(new CheckIssue
             {
                 Severity = CheckSeverity.Error,
                 Title = "Quelldatei nicht gefunden",
-                TechnicalDetail = request.Analysis.DiskPath,
+                TechnicalDetail = sourceDiskPath,
                 PossibleCause = "Der Datenträger wurde verschoben oder gelöscht.",
                 NextStep = "Prüfe den Datenträgerpfad in VirtualBox und starte die Analyse neu.",
             });
@@ -98,6 +111,7 @@ public sealed class MigrationService(
     {
         var startedAt = DateTime.UtcNow;
         var issues = new List<CheckIssue>();
+        var sourceDiskPaths = GetSourceDiskPaths(request.Analysis);
 
         try
         {
@@ -134,48 +148,58 @@ public sealed class MigrationService(
             }
 
             var baseFileName = SanitizeFileName(request.Target.HyperVVmName);
-            var vhdPath = Path.Combine(request.Target.TargetPath, $"{baseFileName}.vhd");
-            var vhdxPath = Path.Combine(request.Target.TargetPath, $"{baseFileName}.vhdx");
+            var convertedDisks = new List<(string VhdPath, string VhdxPath)>();
 
-            progress.Report(Update("Disk-Klon", "Klonen der VirtualBox-Disk nach VHD", 15));
-            var cloneResult = await virtualBoxService
-                .CloneMediumToVhdAsync(request.Analysis.DiskPath, vhdPath, line => loggingService.LogInfo(line), cancellationToken)
-                .ConfigureAwait(false);
-
-            if (cloneResult.ExitCode != 0)
+            for (var index = 0; index < sourceDiskPaths.Count; index++)
             {
-                issues.Add(new CheckIssue
+                var sourceDiskPath = sourceDiskPaths[index];
+                var fileSuffix = index == 0 ? string.Empty : $"-disk{index + 1}";
+                var vhdPath = Path.Combine(request.Target.TargetPath, $"{baseFileName}{fileSuffix}.vhd");
+                var vhdxPath = Path.Combine(request.Target.TargetPath, $"{baseFileName}{fileSuffix}.vhdx");
+
+                progress.Report(Update("Disk-Klon", $"Klonen der VirtualBox-Disk {index + 1}/{sourceDiskPaths.Count} nach VHD", 15));
+                var cloneResult = await virtualBoxService
+                    .CloneMediumToVhdAsync(sourceDiskPath, vhdPath, line => loggingService.LogInfo(line), cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (cloneResult.ExitCode != 0)
                 {
-                    Severity = CheckSeverity.Error,
-                    Title = "Klonen fehlgeschlagen",
-                    TechnicalDetail = cloneResult.StandardError,
-                    PossibleCause = "Dateizugriff blockiert oder VBoxManage-Fehler.",
-                    NextStep = "Prüfe VirtualBox-Logs und ob die Quelldisk gesperrt ist.",
-                });
-                return Failed("Disk-Klon fehlgeschlagen.");
+                    issues.Add(new CheckIssue
+                    {
+                        Severity = CheckSeverity.Error,
+                        Title = "Klonen fehlgeschlagen",
+                        TechnicalDetail = cloneResult.StandardError,
+                        PossibleCause = "Dateizugriff blockiert oder VBoxManage-Fehler.",
+                        NextStep = "Prüfe VirtualBox-Logs und ob die Quelldisk gesperrt ist.",
+                    });
+                    return Failed($"Disk-Klon fehlgeschlagen (Disk {index + 1}).");
+                }
+
+                progress.Report(Update("Konvertierung", $"Konvertiere VHD {index + 1}/{sourceDiskPaths.Count} nach VHDX", 35));
+                var convertResult = await hyperVService
+                    .ConvertVhdToVhdxAsync(vhdPath, vhdxPath, line => loggingService.LogInfo(line), cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (!convertResult.Success)
+                {
+                    issues.Add(new CheckIssue
+                    {
+                        Severity = CheckSeverity.Error,
+                        Title = "VHDX-Konvertierung fehlgeschlagen",
+                        TechnicalDetail = convertResult.Error,
+                        PossibleCause = "VHD wird verwendet oder Zielspeicher reicht nicht.",
+                        NextStep = "Prüfe, ob die VHD in einem anderen Prozess eingebunden ist und ob genügend Speicher verfügbar ist.",
+                    });
+                    return Failed($"VHDX-Konvertierung fehlgeschlagen (Disk {index + 1}).");
+                }
+
+                convertedDisks.Add((vhdPath, vhdxPath));
             }
 
-            progress.Report(Update("Konvertierung", "Konvertiere VHD nach VHDX", 35));
-            var convertResult = await hyperVService
-                .ConvertVhdToVhdxAsync(vhdPath, vhdxPath, line => loggingService.LogInfo(line), cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!convertResult.Success)
-            {
-                issues.Add(new CheckIssue
-                {
-                    Severity = CheckSeverity.Error,
-                    Title = "VHDX-Konvertierung fehlgeschlagen",
-                    TechnicalDetail = convertResult.Error,
-                    PossibleCause = "VHD wird verwendet oder Zielspeicher reicht nicht.",
-                    NextStep = "Prüfe, ob die VHD in einem anderen Prozess eingebunden ist und ob genügend Speicher verfügbar ist.",
-                });
-                return Failed("VHDX-Konvertierung fehlgeschlagen.");
-            }
-
+            var primaryDisk = convertedDisks[0];
             progress.Report(Update("Hyper-V VM", "Erzeuge Hyper-V Ziel-VM", 55));
             var createVmResult = await hyperVService
-                .CreateVmAsync(request.Target, vhdxPath, line => loggingService.LogInfo(line), cancellationToken)
+                .CreateVmAsync(request.Target, primaryDisk.VhdxPath, line => loggingService.LogInfo(line), cancellationToken)
                 .ConfigureAwait(false);
 
             if (!createVmResult.Success)
@@ -189,6 +213,30 @@ public sealed class MigrationService(
                     NextStep = "Prüfe Hyper-V Rechte, VM-Namen und Switch-Konfiguration.",
                 });
                 return Failed("Erstellung der Hyper-V VM fehlgeschlagen.");
+            }
+
+            if (convertedDisks.Count > 1)
+            {
+                for (var index = 1; index < convertedDisks.Count; index++)
+                {
+                    progress.Report(Update("Zusatzdisk", $"Binde zusätzliche Festplatte {index + 1}/{convertedDisks.Count} ein", 65));
+                    var attachResult = await hyperVService
+                        .AttachDiskAsync(request.Target.HyperVVmName, convertedDisks[index].VhdxPath, line => loggingService.LogInfo(line), cancellationToken)
+                        .ConfigureAwait(false);
+
+                    if (!attachResult.Success)
+                    {
+                        issues.Add(new CheckIssue
+                        {
+                            Severity = CheckSeverity.Error,
+                            Title = "Einbinden zusätzlicher Festplatte fehlgeschlagen",
+                            TechnicalDetail = attachResult.Error,
+                            PossibleCause = "Hyper-V konnte die zusätzliche VHDX nicht einhängen.",
+                            NextStep = "Prüfe Hyper-V Rechte und Datenträgerpfade; hänge die Disk ggf. manuell ein.",
+                        });
+                        return Failed($"Zusatzdisk konnte nicht eingebunden werden (Disk {index + 1}).");
+                    }
+                }
             }
 
             if (request.Target.StartAfterCreation)
@@ -237,8 +285,10 @@ public sealed class MigrationService(
                     : "Migration erfolgreich abgeschlossen.",
                 StartedAtUtc = startedAt,
                 FinishedAtUtc = DateTime.UtcNow,
-                VhdPath = vhdPath,
-                VhdxPath = vhdxPath,
+                VhdPath = convertedDisks[0].VhdPath,
+                VhdxPath = convertedDisks[0].VhdxPath,
+                VhdPaths = convertedDisks.Select(disk => disk.VhdPath).ToList(),
+                VhdxPaths = convertedDisks.Select(disk => disk.VhdxPath).ToList(),
                 HyperVVmName = request.Target.HyperVVmName,
             };
             successResult.Issues.AddRange(issues);
@@ -301,6 +351,18 @@ public sealed class MigrationService(
         }
 
         return string.IsNullOrWhiteSpace(value) ? "HyperBridgeVm" : value;
+    }
+
+    private static IReadOnlyList<string> GetSourceDiskPaths(VirtualMachineAnalysis analysis)
+    {
+        if (analysis.DiskPaths.Count > 0)
+        {
+            return analysis.DiskPaths;
+        }
+
+        return string.IsNullOrWhiteSpace(analysis.DiskPath)
+            ? Array.Empty<string>()
+            : [analysis.DiskPath];
     }
 
     private static MigrationProgressUpdate Update(string step, string message, int percent, LogLevel level = LogLevel.Info)

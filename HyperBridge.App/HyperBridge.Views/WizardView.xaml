@@ -52,7 +52,8 @@
                                 <DataGridTextColumn Header="RAM" Binding="{Binding MemoryMb}" Width="80" />
                                 <DataGridTextColumn Header="CPU" Binding="{Binding CpuCount}" Width="70" />
                                 <DataGridCheckBoxColumn Header="Snapshots" Binding="{Binding HasSnapshots}" Width="100" />
-                                <DataGridTextColumn Header="Hauptdisk" Binding="{Binding PrimaryDiskPath}" Width="240" />
+                                <DataGridTextColumn Header="Disks" Binding="{Binding DiskPaths.Count}" Width="80" />
+                                <DataGridTextColumn Header="Hauptdisk" Binding="{Binding PrimaryDiskPath}" Width="220" />
                             </DataGrid.Columns>
                         </DataGrid>
 
@@ -69,6 +70,7 @@
                         </StackPanel>
                         <TextBlock Text="{Binding Analysis.Summary.Name, StringFormat=VM: {0}}" Style="{StaticResource FieldValueText}" />
                         <TextBlock Text="{Binding Analysis.DiskPath, StringFormat=Disk: {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding Analysis.DiskPaths.Count, StringFormat=Anzahl Datenträger: {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Analysis.DiskType, StringFormat=Format: {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Analysis.SourceDiskBytes, StringFormat=Quellgröße (Bytes): {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Analysis.EstimatedRequiredBytes, StringFormat=Geschätzt benötigt (Bytes): {0}}" Style="{StaticResource FieldValueText}" Margin="0,4,0,0" />

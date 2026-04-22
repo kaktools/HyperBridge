@@ -9,5 +9,6 @@ public sealed class VirtualMachineSummary
     public int MemoryMb { get; init; }
     public int CpuCount { get; init; }
     public bool HasSnapshots { get; init; }
+    public IReadOnlyList<string> DiskPaths { get; init; } = Array.Empty<string>();
     public string PrimaryDiskPath { get; init; } = string.Empty;
 }

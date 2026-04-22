@@ -67,6 +67,13 @@ Write-Output 'VM_CREATED'";
         return powerShellRunner.RunAsync(script, 240000, onOutput, cancellationToken);
     }
 
+    public Task<PowerShellExecutionResult> AttachDiskAsync(string vmName, string vhdxPath, Action<string>? onOutput, CancellationToken cancellationToken)
+    {
+        loggingService.LogInfo($"Binde zusätzliche Festplatte in Hyper-V ein: '{vhdxPath}'.");
+        var script = $"Add-VMHardDiskDrive -VMName '{Escape(vmName)}' -Path '{EscapePath(vhdxPath)}' -ErrorAction Stop; Write-Output 'DISK_ATTACHED'";
+        return powerShellRunner.RunAsync(script, 120000, onOutput, cancellationToken);
+    }
+
     public Task<PowerShellExecutionResult> StartVmAsync(string vmName, CancellationToken cancellationToken)
     {
         var script = $"Start-VM -Name '{Escape(vmName)}' -ErrorAction Stop; Write-Output 'VM_STARTED'";

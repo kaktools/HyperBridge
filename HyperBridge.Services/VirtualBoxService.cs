@@ -84,6 +84,7 @@ public sealed class VirtualBoxService(IProcessRunner processRunner, ILoggingServ
 
             var name = match.Groups["name"].Value;
             var details = await GetMachineReadableInfoAsync(vboxManage, name, cancellationToken).ConfigureAwait(false);
+            var diskPaths = ResolveDiskPaths(details);
 
             summaries.Add(new VirtualMachineSummary
             {
@@ -94,7 +95,8 @@ public sealed class VirtualBoxService(IProcessRunner processRunner, ILoggingServ
                 MemoryMb = ParseInt(details.GetValueOrDefault("memory", "0")),
                 CpuCount = ParseInt(details.GetValueOrDefault("cpus", "1")),
                 HasSnapshots = ParseInt(details.GetValueOrDefault("SnapshotNameMachineMapping1", "0")) > 0 || details.Keys.Any(k => k.StartsWith("SnapshotName", StringComparison.OrdinalIgnoreCase)),
-                PrimaryDiskPath = ResolvePrimaryDisk(details),
+                DiskPaths = diskPaths,
+                PrimaryDiskPath = diskPaths.FirstOrDefault() ?? string.Empty,
             });
         }
 
@@ -105,19 +107,26 @@ public sealed class VirtualBoxService(IProcessRunner processRunner, ILoggingServ
     {
         var vboxManage = await FindVBoxManagePathAsync(cancellationToken).ConfigureAwait(false);
         var details = await GetMachineReadableInfoAsync(vboxManage, vmName, cancellationToken).ConfigureAwait(false);
-        var diskPath = ResolvePrimaryDisk(details);
+        var diskPaths = ResolveDiskPaths(details);
+        var diskPath = diskPaths.FirstOrDefault() ?? string.Empty;
 
-        if (string.IsNullOrWhiteSpace(diskPath) || !File.Exists(diskPath))
+        if (string.IsNullOrWhiteSpace(diskPath))
         {
             throw new FileNotFoundException("Die Hauptdatenträger-Datei der VM konnte nicht gefunden werden.", diskPath);
         }
 
-        if (!IsSupportedDiskFile(diskPath))
+        var missingDisks = diskPaths.Where(path => !File.Exists(path)).ToList();
+        if (missingDisks.Count > 0)
         {
-            throw new InvalidOperationException($"Ungültiger Quell-Datenträger erkannt: '{diskPath}'. Erwartet wird eine Disk-Datei (z.B. .vdi/.vmdk), nicht die VM-Konfigurationsdatei.");
+            throw new FileNotFoundException($"Mindestens ein Datenträger konnte nicht gefunden werden: {string.Join(", ", missingDisks)}", missingDisks[0]);
         }
 
-        var fileInfo = new FileInfo(diskPath);
+        if (!diskPaths.All(IsSupportedDiskFile))
+        {
+            throw new InvalidOperationException("Ungültiger Quell-Datenträger erkannt. Erwartet werden Disk-Dateien (z.B. .vdi/.vmdk), nicht VM-Konfigurationsdateien.");
+        }
+
+        var sourceDiskBytes = diskPaths.Sum(path => new FileInfo(path).Length);
         var drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(targetPath)) ?? "C:\\");
         var diskType = Path.GetExtension(diskPath).Trim('.').ToUpperInvariant();
 
@@ -130,23 +139,26 @@ public sealed class VirtualBoxService(IProcessRunner processRunner, ILoggingServ
             MemoryMb = ParseInt(details.GetValueOrDefault("memory", "0")),
             CpuCount = ParseInt(details.GetValueOrDefault("cpus", "1")),
             HasSnapshots = details.Keys.Any(k => k.StartsWith("SnapshotName", StringComparison.OrdinalIgnoreCase)),
+            DiskPaths = diskPaths,
             PrimaryDiskPath = diskPath,
         };
 
         var analysis = new VirtualMachineAnalysis
         {
             Summary = summary,
+            DiskPaths = diskPaths,
             DiskPath = diskPath,
             DiskType = diskType,
             IsRunning = string.Equals(summary.State, "running", StringComparison.OrdinalIgnoreCase),
             HasSavedState = string.Equals(summary.State, "saved", StringComparison.OrdinalIgnoreCase),
             HasSnapshots = summary.HasSnapshots,
-            SourceDiskBytes = fileInfo.Length,
-            EstimatedRequiredBytes = (long)(fileInfo.Length * 1.7),
+            SourceDiskBytes = sourceDiskBytes,
+            EstimatedRequiredBytes = (long)(sourceDiskBytes * 1.7),
             AvailableTargetBytes = drive.AvailableFreeSpace,
         };
 
         analysis.Notes.Add($"Quellformat erkannt: {diskType}");
+        analysis.Notes.Add($"Erkannte Datenträger: {diskPaths.Count}");
         analysis.Notes.Add($"Geschätzter Mindestplatzbedarf: {analysis.EstimatedRequiredBytes / (1024 * 1024 * 1024)} GiB");
         return analysis;
     }
@@ -269,32 +281,40 @@ public sealed class VirtualBoxService(IProcessRunner processRunner, ILoggingServ
         return map;
     }
 
-    private static string ResolvePrimaryDisk(Dictionary<string, string> details)
+    private static IReadOnlyList<string> ResolveDiskPaths(Dictionary<string, string> details)
     {
-        var mediumKey = details.Keys
+        var orderedAttachmentKeys = details.Keys
             .Where(k => k.StartsWith("SATA", StringComparison.OrdinalIgnoreCase)
                 || k.StartsWith("IDE", StringComparison.OrdinalIgnoreCase)
                 || k.StartsWith("SCSI", StringComparison.OrdinalIgnoreCase)
                 || k.StartsWith("NVMe", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(k => k)
-            .FirstOrDefault();
+            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-        if (mediumKey is not null && details.TryGetValue(mediumKey, out var path) && IsSupportedDiskFile(path))
+        var disks = new List<string>();
+        foreach (var key in orderedAttachmentKeys)
         {
-            return path;
-        }
-
-        // Fallback: scan all machine-readable values for a known disk file path.
-        foreach (var value in details.Values)
-        {
-            if (IsSupportedDiskFile(value))
+            if (details.TryGetValue(key, out var path) && IsSupportedDiskFile(path))
             {
-                return value;
+                disks.Add(path);
             }
         }
 
-        // Do not return CfgFile (.vbox) as disk source.
-        return string.Empty;
+        // Fallback: scan all machine-readable values for a known disk file path.
+        if (disks.Count == 0)
+        {
+            foreach (var value in details.Values)
+            {
+                if (IsSupportedDiskFile(value))
+                {
+                    disks.Add(value);
+                }
+            }
+        }
+
+        return disks
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static bool IsSupportedDiskFile(string? path)

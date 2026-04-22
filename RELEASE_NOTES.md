@@ -1,5 +1,35 @@
 # Release Notes
 
+## 1.1.2 - 2026-04-22
+
+Funktionsrelease mit Fokus auf vollständige Migration von VirtualBox-VMs mit mehreren Datenträgern.
+
+### Neu
+
+- Multi-Disk-Unterstützung für die Migration:
+	- HyperBridge erkennt nun alle migrierbaren Festplatten einer VirtualBox-VM statt nur der primären Disk.
+	- Alle erkannten Datenträger werden in die Migrationspipeline übernommen.
+- Hyper-V-Einbindung für Zusatzdatenträger:
+	- Die Ziel-VM wird mit der primären VHDX erstellt.
+	- Weitere konvertierte VHDX-Dateien werden danach automatisch per `Add-VMHardDiskDrive` angehängt.
+
+### Verbessert
+
+- Analysemodell erweitert:
+	- Datenträgerpfade werden als Liste geführt.
+	- Größenberechnung und Platzbedarf berücksichtigen jetzt die Summe aller Quell-Datenträger.
+- Wizard-Oberfläche erweitert:
+	- In der VM-Liste wird die Anzahl erkannter Disks angezeigt.
+	- Im Analyse-Schritt wird die Datenträgeranzahl explizit ausgewiesen.
+- Ergebnis- und Artefaktverwaltung verbessert:
+	- Migrationsresultate enthalten Listen aller erzeugten VHD- und VHDX-Dateien.
+	- Abschlussanzeige und Reports listen mehrere Quell-/Zieldatenträger auf.
+	- Aufräumdialog kann mehrere temporäre VHD-Dateien in einem Schritt löschen.
+
+### Behoben
+
+- Problem behoben, bei dem bei VMs mit zwei oder mehr Festplatten nur die erste Disk migriert und in Hyper-V eingebunden wurde.
+
 ## 1.1.1 - 2026-04-10
 
 Wartungs- und Stabilitätsrelease mit Fokus auf Bedienlogik im Wizard, konsistente Versionsanzeige und robustere VirtualBox-Klonläufe.

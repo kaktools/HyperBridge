@@ -9,6 +9,7 @@ public interface IHyperVService
     Task<IReadOnlyList<string>> GetVirtualSwitchesAsync(CancellationToken cancellationToken);
     Task<PowerShellExecutionResult> ConvertVhdToVhdxAsync(string sourceVhdPath, string targetVhdxPath, Action<string>? onOutput, CancellationToken cancellationToken);
     Task<PowerShellExecutionResult> CreateVmAsync(TargetConfiguration configuration, string vhdxPath, Action<string>? onOutput, CancellationToken cancellationToken);
+    Task<PowerShellExecutionResult> AttachDiskAsync(string vmName, string vhdxPath, Action<string>? onOutput, CancellationToken cancellationToken);
     Task<PowerShellExecutionResult> StartVmAsync(string vmName, CancellationToken cancellationToken);
     Task<PowerShellExecutionResult> CreateCheckpointAsync(string vmName, string checkpointName, CancellationToken cancellationToken);
 }
