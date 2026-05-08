@@ -2,7 +2,14 @@
 
 Geführte Migration von VirtualBox nach Hyper-V auf Windows 10 und 11.
 
-Version: 1.1.2
+Version: 1.1.3
+
+## Neu in 1.1.3
+
+- Zielkonfiguration übernimmt CPU und RAM der ausgewählten VirtualBox-VM jetzt automatisch als Startwerte, bleibt aber vollständig editierbar.
+- RAM-Einstellungen im Wizard werden in GB statt MB angezeigt und eingegeben.
+- RAM-Übernahme wird auf volle GB nach unten normalisiert (z. B. 8318 MB -> 8 GB), damit keine unerwartete Aufrundung entsteht.
+- Gast-Checkliste bleibt wichtig, blockiert den Migrationsstart jedoch nicht mehr zwingend; offene Punkte werden als Warnung geführt.
 
 ## Neu in 1.1.2
 
@@ -51,7 +58,7 @@ dotnet run --project HyperBridge.App/HyperBridge.App.csproj
 1. Systemstatus prüfen.
 2. VirtualBox-VM auswählen.
 3. VM analysieren.
-4. Gastvorbereitung bestätigen.
+4. Gastvorbereitung prüfen und optional dokumentieren.
 5. Zielkonfiguration festlegen.
 6. Kompatibilität und Pre-Check ausführen.
 7. Migration starten und Ergebnis prüfen.

@@ -1,5 +1,30 @@
 # Release Notes
 
+## 1.1.3 - 2026-05-08
+
+Wartungs- und UX-Release mit Fokus auf bessere Standardwerte in der Zielkonfiguration und weniger unnötige Blocker im Ablauf.
+
+### Neu
+
+- Automatische Übernahme von VM-Ressourcen:
+	- Beim Auswählen einer VirtualBox-VM werden CPU-Anzahl und RAM als Startwerte in die Hyper-V-Zielkonfiguration übernommen.
+	- Alle übernommenen Werte bleiben im Wizard weiterhin frei anpassbar.
+- RAM-Eingabe in GB:
+	- RAM-Felder im Wizard wurden von MB auf GB umgestellt (`RAM`, `Start-RAM`, `Min-RAM`, `Max-RAM`).
+	- Interne Verarbeitung bleibt technisch in MB, die UI arbeitet benutzerfreundlich in GB.
+
+### Verbessert
+
+- Konsistente RAM-Normalisierung:
+	- RAM-Werte aus VirtualBox werden bei der Übernahme auf volle GB nach unten normalisiert.
+	- Beispiel: `8318 MB` wird zu `8 GB` (statt auf `9 GB` aufzurunden).
+
+### Geändert
+
+- Gast-Checkliste ist nicht mehr harter Blocker:
+	- Eine unvollständige Checkliste wird im Pre-Check jetzt als Warnung statt als Fehler bewertet.
+	- Die Migration kann damit gestartet werden, offene Punkte bleiben aber klar sichtbar dokumentiert.
+
 ## 1.1.2 - 2026-04-22
 
 Funktionsrelease mit Fokus auf vollständige Migration von VirtualBox-VMs mit mehreren Datenträgern.
