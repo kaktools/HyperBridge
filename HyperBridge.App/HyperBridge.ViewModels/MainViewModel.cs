@@ -1223,10 +1223,11 @@ public sealed class MainViewModel : ViewModelBase
             return;
         }
 
-        MemoryMb = summary.MemoryMb;
-        StartupMemoryMb = summary.MemoryMb;
-        MinimumMemoryMb = Math.Max(MbPerGb, summary.MemoryMb / 2);
-        MaximumMemoryMb = Math.Max(summary.MemoryMb, summary.MemoryMb * 2);
+        var normalizedMemoryMb = NormalizeMbToWholeGb(summary.MemoryMb);
+        MemoryMb = normalizedMemoryMb;
+        StartupMemoryMb = normalizedMemoryMb;
+        MinimumMemoryMb = Math.Max(MbPerGb, normalizedMemoryMb / 2);
+        MaximumMemoryMb = Math.Max(normalizedMemoryMb, normalizedMemoryMb * 2);
     }
 
     private static int MbFromGb(int gb)
@@ -1242,7 +1243,12 @@ public sealed class MainViewModel : ViewModelBase
             return 1;
         }
 
-        return Math.Max(1, (int)Math.Ceiling(mb / (double)MbPerGb));
+        return Math.Max(1, mb / MbPerGb);
+    }
+
+    private static int NormalizeMbToWholeGb(int mb)
+    {
+        return MbFromGb(GbFromMb(mb));
     }
 
     private async Task RunBusyAsync(Func<CancellationToken, Task> action)
