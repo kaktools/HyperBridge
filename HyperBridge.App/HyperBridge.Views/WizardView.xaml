@@ -88,6 +88,7 @@
                         <Border Style="{StaticResource SectionCard}" Padding="12">
                             <StackPanel>
                                 <TextBlock Text="Schritt 3: Gast-Vorbereitung" Style="{StaticResource CardTitleText}" Margin="0,0,0,8" />
+                                <TextBlock Text="Empfohlen für einen sicheren Ablauf, aber kein Pflichtblocker für den Migrationsstart." Style="{StaticResource FieldValueText}" Margin="0,0,0,8" TextWrapping="Wrap" />
                                 <CheckBox Content="Hostname geändert" IsChecked="{Binding HostnameChanged}" Margin="0,3,0,0" />
                                 <CheckBox Content="Lokale Benutzer geprüft" IsChecked="{Binding LocalUsersReviewed}" Margin="0,3,0,0" />
                                 <CheckBox Content="Benutzerpasswörter geändert" IsChecked="{Binding UserPasswordsChanged}" Margin="0,3,0,0" />
@@ -181,19 +182,19 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="RAM (MB)" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" />
-                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding MemoryMb}" Width="120" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="RAM (GB)" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding MemoryGb}" Width="120" HorizontalAlignment="Left" />
 
                                 <CheckBox Grid.Row="1" Grid.ColumnSpan="2" Content="Dynamischer Speicher" IsChecked="{Binding DynamicMemoryEnabled}" Margin="0,8,0,0" />
 
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Start-RAM" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
-                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding StartupMemoryMb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Start-RAM (GB)" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding StartupMemoryGb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
 
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Min-RAM" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
-                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MinimumMemoryMb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Min-RAM (GB)" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MinimumMemoryGb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
 
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Max-RAM" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
-                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaximumMemoryMb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Max-RAM (GB)" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaximumMemoryGb}" Width="120" Margin="0,8,0,0" HorizontalAlignment="Left" />
 
                                 <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Margin="0,10,0,0">
                                     <CheckBox Content="Secure Boot aktiv" IsChecked="{Binding SecureBootEnabled}" />

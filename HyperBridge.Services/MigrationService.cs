@@ -55,11 +55,11 @@ public sealed class MigrationService(
         {
             result.Issues.Add(new CheckIssue
             {
-                Severity = CheckSeverity.Error,
+                Severity = CheckSeverity.Warning,
                 Title = "Gast-Checkliste unvollständig",
-                TechnicalDetail = "Mindestens ein Pflichtpunkt in der Vorbereitung wurde nicht bestätigt.",
+                TechnicalDetail = "Mindestens ein empfohlener Punkt in der Vorbereitung wurde nicht bestätigt.",
                 PossibleCause = "Die Vorbereitung im Gast-OS ist noch nicht abgeschlossen.",
-                NextStep = "Bestätige alle Pflichtpunkte oder dokumentiere bewusst verbleibende Risiken.",
+                NextStep = "Prüfe die offenen Punkte und dokumentiere bewusst verbleibende Risiken.",
             });
         }
 

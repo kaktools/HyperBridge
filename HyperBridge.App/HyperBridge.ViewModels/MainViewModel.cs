@@ -26,6 +26,7 @@ public enum AppPane
 
 public sealed class MainViewModel : ViewModelBase
 {
+    private const int MbPerGb = 1024;
     private const string RepositoryUrl = "https://github.com/kaktools/HyperBridge";
     private const string LatestReleaseApiUrl = "https://api.github.com/repos/kaktools/HyperBridge/releases/latest";
     private static readonly HttpClient UpdateHttpClient = CreateUpdateHttpClient();
@@ -231,6 +232,8 @@ public sealed class MainViewModel : ViewModelBase
             if (SetProperty(ref _selectedVm, value) && value is not null)
             {
                 HyperVVmName = $"{value.Name}-HV";
+                ApplyVmResourceDefaults(value);
+
                 if (string.IsNullOrWhiteSpace(TargetPath))
                 {
                     TargetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "HyperBridge", value.Name);
@@ -446,7 +449,19 @@ public sealed class MainViewModel : ViewModelBase
     public int MemoryMb
     {
         get => _memoryMb;
-        set => SetProperty(ref _memoryMb, value);
+        set
+        {
+            if (SetProperty(ref _memoryMb, value))
+            {
+                OnPropertyChanged(nameof(MemoryGb));
+            }
+        }
+    }
+
+    public int MemoryGb
+    {
+        get => GbFromMb(MemoryMb);
+        set => MemoryMb = MbFromGb(value);
     }
 
     public bool DynamicMemoryEnabled
@@ -458,19 +473,55 @@ public sealed class MainViewModel : ViewModelBase
     public int StartupMemoryMb
     {
         get => _startupMemoryMb;
-        set => SetProperty(ref _startupMemoryMb, value);
+        set
+        {
+            if (SetProperty(ref _startupMemoryMb, value))
+            {
+                OnPropertyChanged(nameof(StartupMemoryGb));
+            }
+        }
+    }
+
+    public int StartupMemoryGb
+    {
+        get => GbFromMb(StartupMemoryMb);
+        set => StartupMemoryMb = MbFromGb(value);
     }
 
     public int MinimumMemoryMb
     {
         get => _minimumMemoryMb;
-        set => SetProperty(ref _minimumMemoryMb, value);
+        set
+        {
+            if (SetProperty(ref _minimumMemoryMb, value))
+            {
+                OnPropertyChanged(nameof(MinimumMemoryGb));
+            }
+        }
+    }
+
+    public int MinimumMemoryGb
+    {
+        get => GbFromMb(MinimumMemoryMb);
+        set => MinimumMemoryMb = MbFromGb(value);
     }
 
     public int MaximumMemoryMb
     {
         get => _maximumMemoryMb;
-        set => SetProperty(ref _maximumMemoryMb, value);
+        set
+        {
+            if (SetProperty(ref _maximumMemoryMb, value))
+            {
+                OnPropertyChanged(nameof(MaximumMemoryGb));
+            }
+        }
+    }
+
+    public int MaximumMemoryGb
+    {
+        get => GbFromMb(MaximumMemoryMb);
+        set => MaximumMemoryMb = MbFromGb(value);
     }
 
     public int CpuCount
@@ -1158,6 +1209,40 @@ public sealed class MainViewModel : ViewModelBase
         }
 
         NextStepCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ApplyVmResourceDefaults(VirtualMachineSummary summary)
+    {
+        if (summary.CpuCount > 0)
+        {
+            CpuCount = summary.CpuCount;
+        }
+
+        if (summary.MemoryMb <= 0)
+        {
+            return;
+        }
+
+        MemoryMb = summary.MemoryMb;
+        StartupMemoryMb = summary.MemoryMb;
+        MinimumMemoryMb = Math.Max(MbPerGb, summary.MemoryMb / 2);
+        MaximumMemoryMb = Math.Max(summary.MemoryMb, summary.MemoryMb * 2);
+    }
+
+    private static int MbFromGb(int gb)
+    {
+        var normalizedGb = Math.Max(1, gb);
+        return normalizedGb * MbPerGb;
+    }
+
+    private static int GbFromMb(int mb)
+    {
+        if (mb <= 0)
+        {
+            return 1;
+        }
+
+        return Math.Max(1, (int)Math.Ceiling(mb / (double)MbPerGb));
     }
 
     private async Task RunBusyAsync(Func<CancellationToken, Task> action)
